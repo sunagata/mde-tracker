@@ -572,4 +572,3 @@ export default function App(){
     {detail&&<DetailDrawer project={detail} onClose={()=>setDetail(null)} onUpdate={updateProject}/>}
   </div>);
 }
-
