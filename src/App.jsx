@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "./supabase";
+import Auth from "./Auth";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadialBarChart, RadialBar, PieChart, Pie, Cell, LineChart, Line,
@@ -422,6 +423,8 @@ function ProjectCard({p,onClick,onDelete,expanded}){
 
 // ── MAIN APP ──
 export default function App(){
+  const [session,setSession]=useState(null);
+  const [authLoading,setAuthLoading]=useState(true);
   const [projects,setProjects]=useState([]);
   const [loading,setLoading]=useState(true);
   const [view,setView]=useState("dashboard");
@@ -446,7 +449,17 @@ export default function App(){
     setLoading(false);
   };
 
-  useEffect(()=>{loadProjects();},[]);
+  useEffect(()=>{
+    supabase.auth.getSession().then(({data:{session}})=>{
+      setSession(session);setAuthLoading(false);
+    });
+    const{data:{subscription}}=supabase.auth.onAuthStateChange((_,session)=>{
+      setSession(session);setAuthLoading(false);
+    });
+    return()=>subscription.unsubscribe();
+  },[]);
+
+  useEffect(()=>{if(session)loadProjects();},[session]);
 
   const addProject=async(form)=>{
     const{data,error}=await supabase.from("projects").insert({
@@ -497,6 +510,8 @@ export default function App(){
 
   const NAV=[{id:"dashboard",label:"Dashboard",icon:"📊"},{id:"projects",label:"Projects",icon:"📋"},{id:"gantt",label:"Gantt Chart",icon:"📅"},{id:"analytics",label:"Analytics",icon:"📈"}];
 
+  if(authLoading) return <Spinner/>;
+  if(!session) return <Auth/>;
   if(loading) return <Spinner/>;
 
   return(<div style={{minHeight:"100vh",background:"#f5f6f8",fontFamily:"system-ui,-apple-system,sans-serif",display:"flex"}}>
@@ -513,11 +528,18 @@ export default function App(){
         </button>))}
       </nav>
       <div style={{padding:"1rem",borderTop:"1px solid #1f2937"}}>
-        <div style={{fontSize:10,color:"#4b5563",lineHeight:1.7}}>
+        <div style={{fontSize:10,color:"#9ca3af",marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+          👤 {session?.user?.user_metadata?.full_name||session?.user?.email||"User"}
+        </div>
+        <div style={{fontSize:10,color:"#4b5563",lineHeight:1.7,marginBottom:8}}>
           <div>{projects.length} projects total</div>
           <div style={{color:stats.active?"#639922":"#4b5563"}}>{stats.active} active</div>
           {stats.overdue>0&&<div style={{color:"#D85A30"}}>{stats.overdue} overdue ⚠️</div>}
         </div>
+        <button onClick={()=>supabase.auth.signOut()}
+          style={{width:"100%",padding:"6px 0",background:"#374151",border:"none",borderRadius:6,color:"#9ca3af",fontSize:11,cursor:"pointer",fontWeight:500}}>
+          🚪 Logout
+        </button>
       </div>
     </div>
 
