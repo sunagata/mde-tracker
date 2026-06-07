@@ -8,9 +8,9 @@ import {
 } from "recharts";
 
 const CATEGORIES = ["Dies","Jig","CF","Reverse Engineering","Other"];
-const CATEGORY_ICONS = { Dies:"🔨",Jig:"📐",CF:"⚙️","Reverse Engineering":"🔍",Other:"📋" };
-const STATUS_COLORS = { planning:"#378ADD",active:"#639922",review:"#BA7517",done:"#1D9E75",hold:"#888780" };
-const PRIORITY_COLORS = { High:"#D85A30",Medium:"#BA7517",Low:"#639922" };
+const CATEGORY_ICONS = { Dies:"🔨", Jig:"📐", CF:"⚙️", "Reverse Engineering":"🔍", Other:"📋" };
+const STATUS_COLORS = { planning:"#378ADD", active:"#639922", review:"#BA7517", done:"#1D9E75", hold:"#888780" };
+const PRIORITY_COLORS = { High:"#D85A30", Medium:"#BA7517", Low:"#639922" };
 const PHASE_COLORS = ["#185FA5","#1D9E75","#BA7517","#D85A30","#7F77DD","#0F6E56"];
 const CHART_COLORS = ["#185FA5","#1D9E75","#BA7517","#D85A30","#7F77DD","#0F6E56"];
 
@@ -27,7 +27,7 @@ function pct(p){
 function fmtDate(s){return s?new Date(s).toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"}):"—"}
 
 function Badge({status}){
-  const map={planning:{bg:"#E6F1FB",c:"#0C447C",t:"Planning"},active:{bg:"#949692",c:"#27500A",t:"Active"},review:{bg:"#FAEEDA",c:"#633806",t:"Review"},done:{bg:"#E1F5EE",c:"#085041",t:"Done"},hold:{bg:"#F1EFE8",c:"#444441",t:"On Hold"}};
+  const map={planning:{bg:"#E6F1FB",c:"#0C447C",t:"Planning"},active:{bg:"#EAF3DE",c:"#27500A",t:"Active"},review:{bg:"#FAEEDA",c:"#633806",t:"Review"},done:{bg:"#E1F5EE",c:"#085041",t:"Done"},hold:{bg:"#F1EFE8",c:"#444441",t:"On Hold"}};
   const s=map[status]||map.planning;
   return <span style={{fontSize:11,padding:"3px 10px",borderRadius:999,fontWeight:600,background:s.bg,color:s.c}}>{s.t}</span>;
 }
@@ -65,7 +65,6 @@ const CTip=(props)=>{
   </div>);
 };
 
-// ── LOADING ──
 function Spinner(){
   return(<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",flexDirection:"column",gap:12}}>
     <div style={{width:40,height:40,border:"3px solid #eee",borderTop:"3px solid #185FA5",borderRadius:"50%",animation:"spin 1s linear infinite"}}/>
@@ -74,7 +73,6 @@ function Spinner(){
   </div>);
 }
 
-// ── GANTT ──
 function GanttBar({projects}){
   const today=new Date();
   const allDates=projects.flatMap(p=>[new Date(p.start_date||p.deadline),new Date(p.deadline)]);
@@ -108,7 +106,6 @@ function GanttBar({projects}){
   </div></div>);
 }
 
-// ── ANALYTICS ──
 function AnalyticsPanel({projects}){
   const byStatus=Object.entries(projects.reduce((a,p)=>{a[p.status]=(a[p.status]||0)+1;return a},{})).map(([name,value])=>({name:name.charAt(0).toUpperCase()+name.slice(1),value,fill:STATUS_COLORS[name]}));
   const byCat=Object.entries(projects.reduce((a,p)=>{a[p.category]=(a[p.category]||0)+1;return a},{})).map(([name,value])=>({name,value}));
@@ -130,7 +127,7 @@ function AnalyticsPanel({projects}){
           <BarChart data={byCat} layout="vertical" margin={{left:8,right:16,top:4,bottom:4}}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0"/>
             <XAxis type="number" tick={{fontSize:10}} allowDecimals={false}/>
-            <YAxis type="category" dataKey="name" tick={{fontSize:10}} width={100}/>
+            <YAxis type="category" dataKey="name" tick={{fontSize:10}} width={120}/>
             <Tooltip content={CTip}/>
             <Bar dataKey="value" name="Proyek" radius={[0,4,4,0]}>{byCat.map((e,i)=><Cell key={i} fill={CHART_COLORS[i%CHART_COLORS.length]}/>)}</Bar>
           </BarChart>
@@ -148,7 +145,6 @@ function AnalyticsPanel({projects}){
         </BarChart>
       </ResponsiveContainer>
     </Card>
-
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
       <Card title="Weekly Progress Trend (%)">
         <ResponsiveContainer width="100%" height={200}>
@@ -172,14 +168,12 @@ function AnalyticsPanel({projects}){
   </div>);
 }
 
-// ── TASK PANEL ──
 function TaskPanel({project,onUpdate}){
   const [newTask,setNewTask]=useState("");
   const [newPrio,setNewPrio]=useState("Medium");
   const [newPhase,setNewPhase]=useState("Drawing");
   const [saving,setSaving]=useState(false);
   const phases=["Specification","Calculation","Analysis","Drawing","Procurement","Review"];
-
   const toggleTask=async(taskId,currentDone)=>{
     const{error}=await supabase.from("tasks").update({done:!currentDone}).eq("id",taskId);
     if(!error){
@@ -189,20 +183,14 @@ function TaskPanel({project,onUpdate}){
       onUpdate({...project,tasks:updatedTasks,progress:newProgress});
     }
   };
-
   const addTask=async()=>{
     if(!newTask.trim()||saving) return;
     setSaving(true);
     const{data,error}=await supabase.from("tasks").insert({project_id:project.id,name:newTask.trim(),done:false,priority:newPrio,phase:newPhase}).select().single();
-    if(!error){
-      onUpdate({...project,tasks:[...project.tasks,data]});
-      setNewTask("");
-    }
+    if(!error){onUpdate({...project,tasks:[...project.tasks,data]});setNewTask("");}
     setSaving(false);
   };
-
   const byPhase=phases.reduce((acc,ph)=>{acc[ph]=project.tasks.filter(t=>t.phase===ph);return acc},{});
-
   return(<div>
     <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14,padding:"10px 12px",background:"#f8f9fa",borderRadius:8}}>
       <ProgressRing value={pct(project)} color={STATUS_COLORS[project.status]}/>
@@ -237,33 +225,28 @@ function TaskPanel({project,onUpdate}){
       <select value={newPrio} onChange={e=>setNewPrio(e.target.value)} style={{padding:"7px 8px",border:"1px solid #ddd",borderRadius:8,fontSize:12,outline:"none"}}>
         {["High","Medium","Low"].map(p=><option key={p}>{p}</option>)}
       </select>
-      <button onClick={addTask} disabled={saving} style={{padding:"7px 14px",background:"#185FA5",color:"#fff",border:"none",borderRadius:8,fontSize:13,cursor:"pointer",fontWeight:600,opacity:saving?.6:1}}>
-        {saving?"...":"+ Add"}
-      </button>
+      <button onClick={addTask} disabled={saving} style={{padding:"7px 14px",background:"#185FA5",color:"#fff",border:"none",borderRadius:8,fontSize:13,cursor:"pointer",fontWeight:600,opacity:saving?.6:1}}>{saving?"...":"+ Add"}</button>
     </div>
   </div>);
 }
 
-// ── DETAIL DRAWER ──
 function DetailDrawer({project,onClose,onUpdate}){
   const [tab,setTab]=useState("overview");
   const [savingStatus,setSavingStatus]=useState(false);
   const tabs=[{id:"overview",label:"Overview"},{id:"tasks",label:`Tasks (${project.tasks.length})`},{id:"milestones",label:"Milestones"},{id:"chart",label:"Analytics"}];
   const dl=daysLeft(project.deadline);
-
   const changeStatus=async(s)=>{
     setSavingStatus(true);
     const{error}=await supabase.from("projects").update({status:s}).eq("id",project.id);
     if(!error) onUpdate({...project,status:s});
     setSavingStatus(false);
   };
-
   return(<div style={{position:"fixed",inset:0,zIndex:150,display:"flex"}} onClick={onClose}>
     <div style={{flex:1,background:"rgba(0,0,0,.3)"}}/>
     <div style={{width:"min(580px,98vw)",background:"#fff",height:"100%",overflowY:"auto",boxShadow:"-8px 0 40px rgba(0,0,0,.12)"}} onClick={e=>e.stopPropagation()}>
       <div style={{padding:"1.25rem 1.5rem",borderBottom:"1px solid #f0f0f0",background:`linear-gradient(135deg,${STATUS_COLORS[project.status]}11 0%,#fff 60%)`}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-          <div style={{fontSize:22}}>{CATEGORY_ICONS[project.category]}</div>
+          <div style={{fontSize:22}}>{CATEGORY_ICONS[project.category]||"📋"}</div>
           <button onClick={onClose} style={{border:"none",background:"none",fontSize:18,cursor:"pointer",color:"#888"}}>✕</button>
         </div>
         <div style={{fontSize:17,fontWeight:700,color:"#111",lineHeight:1.3,marginBottom:6}}>{project.name}</div>
@@ -278,7 +261,7 @@ function DetailDrawer({project,onClose,onUpdate}){
       </div>
       <div style={{padding:"1.25rem 1.5rem"}}>
         {tab==="overview"&&(<div style={{display:"flex",flexDirection:"column",gap:16}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             {[{label:"Progress",val:`${pct(project)}%`,sub:"task completion",color:STATUS_COLORS[project.status]},{label:"Deadline",val:dl.label,sub:fmtDate(project.deadline),color:dl.color}]
               .map((k,i)=>(<div key={i} style={{background:"#f8f9fa",borderRadius:10,padding:12}}>
                 <div style={{fontSize:11,color:"#888",marginBottom:4}}>{k.label}</div>
@@ -296,7 +279,6 @@ function DetailDrawer({project,onClose,onUpdate}){
             <div style={{fontSize:11,color:"#aaa",marginBottom:4,textTransform:"uppercase",letterSpacing:.6}}>Deskripsi</div>
             <div style={{fontSize:13,color:"#444",lineHeight:1.6}}>{project.description}</div>
           </div>)}
-
           <div>
             <div style={{fontSize:11,color:"#aaa",marginBottom:6,textTransform:"uppercase",letterSpacing:.6}}>Ubah Status</div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
@@ -347,16 +329,13 @@ function DetailDrawer({project,onClose,onUpdate}){
   </div>);
 }
 
-// ── MODAL TAMBAH PROYEK ──
 function ProjectModal({onClose,onSave}){
-  const [form,setForm]=useState({name:"",category:"Structure",status:"planning",engineer:"",deadline:"",start_date:"",priority:"High",client:"",drw_no:"",description:""});
+  const [form,setForm]=useState({name:"",category:"Dies",status:"planning",engineer:"",deadline:"",start_date:"",priority:"High",client:"",drw_no:"",description:""});
   const [saving,setSaving]=useState(false);
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const save=async()=>{
     if(!form.name.trim()){alert("Nama proyek tidak boleh kosong");return;}
-    setSaving(true);
-    await onSave(form);
-    setSaving(false);
+    setSaving(true);await onSave(form);setSaving(false);
   };
   return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
     <div style={{background:"#fff",borderRadius:16,padding:"1.5rem",width:"min(560px,96vw)",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,.2)"}} onClick={e=>e.stopPropagation()}>
@@ -364,7 +343,7 @@ function ProjectModal({onClose,onSave}){
         <div style={{fontSize:18,fontWeight:600,color:"#111"}}>Tambah Proyek Baru</div>
         <button onClick={onClose} style={{border:"none",background:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
       </div>
-      {[{label:"Nama Proyek *",key:"name",placeholder:"Contoh: Structural Frame Conveyor"},{label:"Nomor Drawing",key:"drw_no",placeholder:"STR-2026-001"},{label:"Engineer / PIC",key:"engineer",placeholder:"Nama engineer"},{label:"Client / Owner",key:"client",placeholder:"Nama client"}]
+      {[{label:"Nama Proyek *",key:"name",placeholder:"Contoh: Dies Stamping Part A"},{label:"Nomor Drawing",key:"drw_no",placeholder:"DIES-2026-001"},{label:"Engineer / PIC",key:"engineer",placeholder:"Nama engineer"},{label:"Client / Owner",key:"client",placeholder:"Nama client"}]
         .map(f=>(<div key={f.key} style={{marginBottom:12}}>
           <label style={{fontSize:12,color:"#666",display:"block",marginBottom:4}}>{f.label}</label>
           <input value={form[f.key]||""} onChange={e=>set(f.key,e.target.value)} placeholder={f.placeholder} style={{width:"100%",padding:"8px 10px",border:"1px solid #ddd",borderRadius:8,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
@@ -374,7 +353,8 @@ function ProjectModal({onClose,onSave}){
           .map(f=>(<div key={f.key}><label style={{fontSize:12,color:"#666",display:"block",marginBottom:4}}>{f.label}</label>
             <select value={form[f.key]} onChange={e=>set(f.key,e.target.value)} style={{width:"100%",padding:"8px 10px",border:"1px solid #ddd",borderRadius:8,fontSize:13,outline:"none"}}>
               {f.opts.map(o=><option key={o} value={o}>{o.charAt(0).toUpperCase()+o.slice(1)}</option>)}</select></div>))}
-
+        <div><label style={{fontSize:12,color:"#666",display:"block",marginBottom:4}}>Revision</label>
+          <input type="number" value={form.revision||0} onChange={e=>set("revision",+e.target.value)} style={{width:"100%",padding:"8px 10px",border:"1px solid #ddd",borderRadius:8,fontSize:13,outline:"none",boxSizing:"border-box"}}/></div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
         {[{label:"Start Date",key:"start_date"},{label:"Deadline",key:"deadline"}].map(f=>(<div key={f.key}>
@@ -391,13 +371,12 @@ function ProjectModal({onClose,onSave}){
   </div>);
 }
 
-// ── PROJECT CARD ──
 function ProjectCard({p,onClick,onDelete,expanded}){
   const progress=pct(p),dl=daysLeft(p.deadline),barColor=STATUS_COLORS[p.status]||"#378ADD";
   return(<div onClick={onClick} style={{background:"#fff",borderRadius:12,border:"1px solid #eee",padding:"1rem 1.25rem",cursor:"pointer",boxShadow:"0 1px 4px rgba(0,0,0,.04)",transition:"box-shadow .15s"}}
     onMouseEnter={e=>e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,.1)"} onMouseLeave={e=>e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,.04)"}>
     <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
-      <div style={{width:40,height:40,borderRadius:10,background:`${barColor}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{CATEGORY_ICONS[p.category]||"📐"}</div>
+      <div style={{width:40,height:40,borderRadius:10,background:`${barColor}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{CATEGORY_ICONS[p.category]||"📋"}</div>
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
           <div style={{fontSize:14,fontWeight:600,color:"#111",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:280}}>{p.name}</div>
@@ -413,6 +392,7 @@ function ProjectCard({p,onClick,onDelete,expanded}){
         {expanded&&(<div style={{marginTop:8,display:"flex",gap:16,flexWrap:"wrap",fontSize:11,color:"#aaa"}}>
           <span>📅 {fmtDate(p.start_date)} → {fmtDate(p.deadline)}</span>
           <span>✅ {p.tasks.filter(t=>t.done).length}/{p.tasks.length} tasks</span>
+          <span>📁 {p.category}</span>
         </div>)}
       </div>
       <button onClick={e=>{e.stopPropagation();onDelete();}} style={{border:"none",background:"none",cursor:"pointer",color:"#ddd",fontSize:14,flexShrink:0,padding:4}}
@@ -421,7 +401,6 @@ function ProjectCard({p,onClick,onDelete,expanded}){
   </div>);
 }
 
-// ── MAIN APP ──
 export default function App(){
   const [session,setSession]=useState(null);
   const [authLoading,setAuthLoading]=useState(true);
@@ -434,7 +413,14 @@ export default function App(){
   const [modal,setModal]=useState(false);
   const [detail,setDetail]=useState(null);
 
-  // Load data dari Supabase
+  useEffect(()=>{
+    supabase.auth.getSession().then(({data:{session}})=>{setSession(session);setAuthLoading(false);});
+    const{data:{subscription}}=supabase.auth.onAuthStateChange((_,session)=>{setSession(session);setAuthLoading(false);});
+    return()=>subscription.unsubscribe();
+  },[]);
+
+  useEffect(()=>{if(session)loadProjects();},[session]);
+
   const loadProjects=async()=>{
     setLoading(true);
     const{data:projectsData}=await supabase.from("projects").select("*").order("created_at",{ascending:false});
@@ -449,38 +435,20 @@ export default function App(){
     setLoading(false);
   };
 
-  useEffect(()=>{
-    supabase.auth.getSession().then(({data:{session}})=>{
-      setSession(session);setAuthLoading(false);
-    });
-    const{data:{subscription}}=supabase.auth.onAuthStateChange((_,session)=>{
-      setSession(session);setAuthLoading(false);
-    });
-    return()=>subscription.unsubscribe();
-  },[]);
-
-  useEffect(()=>{if(session)loadProjects();},[session]);
-
   const addProject=async(form)=>{
     const{data,error}=await supabase.from("projects").insert({
       name:form.name,category:form.category,status:form.status,engineer:form.engineer,
       deadline:form.deadline||null,start_date:form.start_date||null,priority:form.priority,
-      budget:0,spent:0,client:form.client,drw_no:form.drw_no,
-      description:form.description,progress:0,revision:0,weekly_progress:[0,0,0,0,0,0]
+      budget:0,spent:0,client:form.client,drw_no:form.drw_no,revision:form.revision||0,
+      description:form.description,progress:0,weekly_progress:[0,0,0,0,0,0]
     }).select().single();
-    if(!error){
-      setProjects(ps=>[{...data,tasks:[],milestones:[]},...ps]);
-      setModal(false);
-    }
+    if(!error){setProjects(ps=>[{...data,tasks:[],milestones:[]},...ps]);setModal(false);}
   };
 
-  const updateProject=(updated)=>{
-    setProjects(ps=>ps.map(p=>p.id===updated.id?updated:p));
-    setDetail(updated);
-  };
+  const updateProject=(updated)=>{setProjects(ps=>ps.map(p=>p.id===updated.id?updated:p));setDetail(updated);};
 
   const deleteProject=async(id)=>{
-    if(!confirm("Hapus proyek ini? Semua tasks dan milestones akan ikut terhapus.")) return;
+    if(!confirm("Hapus proyek ini?")) return;
     await supabase.from("projects").delete().eq("id",id);
     setProjects(ps=>ps.filter(p=>p.id!==id));
     setDetail(null);
@@ -494,20 +462,20 @@ export default function App(){
       if(sort==="deadline") return new Date(a.deadline)-new Date(b.deadline);
       if(sort==="progress") return pct(b)-pct(a);
       if(sort==="priority"){const o={High:0,Medium:1,Low:2};return o[a.priority]-o[b.priority];}
-      if(sort==="budget") return (b.budget||0)-(a.budget||0);
       return 0;
     });
     return ps;
   },[projects,filter,search,sort]);
 
   const stats=useMemo(()=>{
-    const total=projects.length,active=projects.filter(p=>p.status==="active").length,done=projects.filter(p=>p.status==="done").length,review=projects.filter(p=>p.status==="review").length;
-    const overdue=projects.filter(p=>p.status!=="done"&&new Date(p.deadline)<new Date()).length;
+    const total=projects.length,active=projects.filter(p=>p.status==="active").length;
+    const done=projects.filter(p=>p.status==="done").length,review=projects.filter(p=>p.status==="review").length;
+    const overdue=projects.filter(p=>p.status!=="done"&&p.deadline&&new Date(p.deadline)<new Date()).length;
     const avgProg=total?Math.round(projects.reduce((a,p)=>a+pct(p),0)/total):0;
-    const totalBudget=0,totalSpent=0;
-    return{total,active,done,review,overdue,avgProg,totalBudget,totalSpent};
+    return{total,active,done,review,overdue,avgProg};
   },[projects]);
 
+  const userName=session?.user?.user_metadata?.full_name||session?.user?.email?.split("@")[0]||"User";
   const NAV=[{id:"dashboard",label:"Dashboard",icon:"📊"},{id:"projects",label:"Projects",icon:"📋"},{id:"gantt",label:"Gantt Chart",icon:"📅"},{id:"analytics",label:"Analytics",icon:"📈"}];
 
   if(authLoading) return <Spinner/>;
@@ -528,16 +496,13 @@ export default function App(){
         </button>))}
       </nav>
       <div style={{padding:"1rem",borderTop:"1px solid #1f2937"}}>
-        <div style={{fontSize:10,color:"#9ca3af",marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-          👤 {session?.user?.user_metadata?.full_name||session?.user?.email||"User"}
-        </div>
+        <div style={{fontSize:11,color:"#9ca3af",marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>👤 {userName}</div>
         <div style={{fontSize:10,color:"#4b5563",lineHeight:1.7,marginBottom:8}}>
           <div>{projects.length} projects total</div>
           <div style={{color:stats.active?"#639922":"#4b5563"}}>{stats.active} active</div>
           {stats.overdue>0&&<div style={{color:"#D85A30"}}>{stats.overdue} overdue ⚠️</div>}
         </div>
-        <button onClick={()=>supabase.auth.signOut()}
-          style={{width:"100%",padding:"6px 0",background:"#374151",border:"none",borderRadius:6,color:"#9ca3af",fontSize:11,cursor:"pointer",fontWeight:500}}>
+        <button onClick={()=>supabase.auth.signOut()} style={{width:"100%",padding:"7px 0",background:"#374151",border:"none",borderRadius:6,color:"#9ca3af",fontSize:11,cursor:"pointer",fontWeight:500}}>
           🚪 Logout
         </button>
       </div>
@@ -549,11 +514,12 @@ export default function App(){
         <div style={{flex:1}}><div style={{fontSize:16,fontWeight:700,color:"#111"}}>{NAV.find(n=>n.id===view)?.label}</div></div>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍  Cari proyek, engineer, client..." style={{padding:"6px 12px",border:"1px solid #e5e7eb",borderRadius:8,fontSize:13,outline:"none",width:220,background:"#f9fafb"}}/>
         <select value={sort} onChange={e=>setSort(e.target.value)} style={{padding:"6px 10px",border:"1px solid #e5e7eb",borderRadius:8,fontSize:12,outline:"none",background:"#f9fafb"}}>
-          <option value="deadline">Sort: Deadline</option><option value="progress">Sort: Progress</option>
-          <option value="priority">Sort: Priority</option><option value="budget">Sort: Budget</option>
+          <option value="deadline">Sort: Deadline</option>
+          <option value="progress">Sort: Progress</option>
+          <option value="priority">Sort: Priority</option>
         </select>
         <button onClick={()=>setModal(true)} style={{display:"flex",alignItems:"center",gap:5,padding:"7px 14px",background:"#185FA5",color:"#fff",border:"none",borderRadius:8,fontSize:12,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>+ Tambah Proyek</button>
-        <button onClick={loadProjects} title="Refresh data" style={{padding:"7px 10px",border:"1px solid #eee",borderRadius:8,background:"#fff",cursor:"pointer",fontSize:14}}>🔄</button>
+        <button onClick={loadProjects} title="Refresh" style={{padding:"7px 10px",border:"1px solid #eee",borderRadius:8,background:"#fff",cursor:"pointer",fontSize:14}}>🔄</button>
       </div>
 
       <div style={{flex:1,overflowY:"auto",padding:"1.25rem"}}>
@@ -566,7 +532,6 @@ export default function App(){
                 <div style={{fontSize:10,color:"#bbb",marginTop:2}}>{k.sub}</div>
               </div>))}
           </div>
-
           {!projects.length&&(<div style={{textAlign:"center",padding:"3rem",color:"#aaa"}}>
             <div style={{fontSize:40,marginBottom:8}}>📋</div>
             <div style={{fontSize:15,fontWeight:600,marginBottom:4}}>Belum ada proyek</div>
@@ -588,18 +553,17 @@ export default function App(){
           </div>
         </div>)}
 
-        {view==="gantt"&&projects.length>0&&(<div style={{background:"#fff",borderRadius:12,padding:"1.25rem",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
-          <div style={{fontSize:14,fontWeight:600,color:"#222",marginBottom:16}}>Timeline Proyek — Gantt Chart</div>
-          <GanttBar projects={projects}/>
-        </div>)}
-
-        {view==="analytics"&&projects.length>0&&<AnalyticsPanel projects={projects}/>}
-
-        {(view==="gantt"||view==="analytics")&&!projects.length&&(
-          <div style={{textAlign:"center",padding:"3rem",color:"#aaa"}}>
-            <div style={{fontSize:40,marginBottom:8}}>📊</div>
-            <div style={{fontSize:14}}>Tambah proyek dulu untuk melihat {view==="gantt"?"Gantt Chart":"Analytics"}</div>
+        {view==="gantt"&&(projects.length>0?
+          <div style={{background:"#fff",borderRadius:12,padding:"1.25rem",boxShadow:"0 1px 4px rgba(0,0,0,.05)"}}>
+            <div style={{fontSize:14,fontWeight:600,color:"#222",marginBottom:16}}>Timeline Proyek — Gantt Chart</div>
+            <GanttBar projects={projects}/>
           </div>
+          :<div style={{textAlign:"center",padding:"3rem",color:"#aaa"}}><div style={{fontSize:40,marginBottom:8}}>📅</div><div>Tambah proyek dulu untuk melihat Gantt Chart</div></div>
+        )}
+
+        {view==="analytics"&&(projects.length>0?
+          <AnalyticsPanel projects={projects}/>
+          :<div style={{textAlign:"center",padding:"3rem",color:"#aaa"}}><div style={{fontSize:40,marginBottom:8}}>📈</div><div>Tambah proyek dulu untuk melihat Analytics</div></div>
         )}
       </div>
     </div>
