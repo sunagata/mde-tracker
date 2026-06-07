@@ -27,7 +27,7 @@ function pct(p){
 function fmtDate(s){return s?new Date(s).toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"}):"—"}
 
 function Badge({status}){
-  const map={planning:{bg:"#E6F1FB",c:"#0C447C",t:"Planning"},active:{bg:"#EAF3DE",c:"#27500A",t:"Active"},review:{bg:"#FAEEDA",c:"#633806",t:"Review"},done:{bg:"#E1F5EE",c:"#085041",t:"Done"},hold:{bg:"#F1EFE8",c:"#444441",t:"On Hold"}};
+  const map={planning:{bg:"#E6F1FB",c:"#0C447C",t:"Planning"},active:{bg:"#949692",c:"#27500A",t:"Active"},review:{bg:"#FAEEDA",c:"#633806",t:"Review"},done:{bg:"#E1F5EE",c:"#085041",t:"Done"},hold:{bg:"#F1EFE8",c:"#444441",t:"On Hold"}};
   const s=map[status]||map.planning;
   return <span style={{fontSize:11,padding:"3px 10px",borderRadius:999,fontWeight:600,background:s.bg,color:s.c}}>{s.t}</span>;
 }
