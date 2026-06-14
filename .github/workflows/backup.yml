@@ -5,46 +5,33 @@ on:
     - cron: '0 2 * * 0'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/checkout@v4
 
-      - name: Backup projects
+      - name: Backup all tables
         run: |
           mkdir -p backups
           DATE=$(date +%Y-%m-%d)
-          
-          curl -s "${{ secrets.SUPABASE_URL }}/rest/v1/projects?select=*" \
-            -H "apikey: ${{ secrets.SUPABASE_SERVICE_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
-            > backups/projects_$DATE.json
-          
-          curl -s "${{ secrets.SUPABASE_URL }}/rest/v1/tasks?select=*" \
-            -H "apikey: ${{ secrets.SUPABASE_SERVICE_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
-            > backups/tasks_$DATE.json
-          
-          curl -s "${{ secrets.SUPABASE_URL }}/rest/v1/milestones?select=*" \
-            -H "apikey: ${{ secrets.SUPABASE_SERVICE_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
-            > backups/milestones_$DATE.json
-          
-          curl -s "${{ secrets.SUPABASE_URL }}/rest/v1/daily_logs?select=*" \
-            -H "apikey: ${{ secrets.SUPABASE_SERVICE_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
-            > backups/daily_logs_$DATE.json
-          
-          echo "Backup completed: $DATE"
 
-      - name: Commit backup
+          for TABLE in projects tasks milestones daily_logs; do
+            curl -s "${{ secrets.SUPABASE_URL }}/rest/v1/${TABLE}?select=*" \
+              -H "apikey: ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+              > backups/${TABLE}_${DATE}.json
+            echo "✅ Backed up: ${TABLE}"
+          done
+
+      - name: Commit and push backup
         run: |
-          git config user.name "GitHub Actions"
+          git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           git add backups/
           git diff --staged --quiet || git commit -m "Auto backup $(date +%Y-%m-%d)"
-          git push
+          git push origin main
