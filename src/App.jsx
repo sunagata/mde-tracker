@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
-import DailyLog from "./DailyLog";
+import DailyProcess from "./DailyProcess";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadialBarChart, RadialBar, PieChart, Pie, Cell, LineChart, Line,
@@ -460,6 +460,15 @@ export default function App(){
 
   useEffect(()=>{if(session)loadProjects();},[session]);
 
+  // Daily Process menambahkan project baru langsung ke tabel "projects" (lihat DailyProcess.jsx).
+  // Event ini memberi tahu App.jsx untuk reload supaya project baru itu juga muncul
+  // di Dashboard / Projects / Gantt / Analytics tanpa perlu refresh manual.
+  useEffect(()=>{
+    const handler=()=>{if(session) loadProjects();};
+    window.addEventListener("mde:projects-changed",handler);
+    return()=>window.removeEventListener("mde:projects-changed",handler);
+  },[session]);
+
   const loadProjects=async()=>{
     setLoading(true);
     setLoadError(null);
@@ -526,7 +535,7 @@ export default function App(){
   },[projects]);
 
   const userName=session?.user?.user_metadata?.full_name||session?.user?.email?.split("@")[0]||"User";
-  const NAV=[{id:"dashboard",label:"Dashboard",icon:"📊"},{id:"projects",label:"Projects",icon:"📋"},{id:"gantt",label:"Gantt Chart",icon:"📅"},{id:"analytics",label:"Analytics",icon:"📈"},{id:"dailylog",label:"Daily Log",icon:"📝"}];
+  const NAV=[{id:"dashboard",label:"Dashboard",icon:"📊"},{id:"projects",label:"Projects",icon:"📋"},{id:"gantt",label:"Gantt Chart",icon:"📅"},{id:"analytics",label:"Analytics",icon:"📈"},{id:"dailyprocess",label:"Daily Process",icon:"📝"}];
 
   if(authLoading) return <Spinner message="Memeriksa sesi login..."/>;
   if(!session) return <Auth/>;
@@ -618,8 +627,8 @@ export default function App(){
           :<div style={{textAlign:"center",padding:"3rem",color:"#aaa"}}><div style={{fontSize:40,marginBottom:8}}>📈</div><div>Tambah proyek dulu untuk melihat Analytics</div></div>
         )}
 
-        {view==="dailylog"&&(
-          <DailyLog session={session} projects={projects}/>
+        {view==="dailyprocess"&&(
+          <DailyProcess session={session} projects={projects}/>
         )}
       </div>
     </div>
