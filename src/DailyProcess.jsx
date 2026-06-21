@@ -446,9 +446,19 @@ export default function DailyProcess({ session, projects }) {
   }
 
   async function handleUpdateProgress(stepId, value) {
+    const current = steps.find(s => s.id === stepId);
+    const oldValue = current ? current.progress : 0;
     setSteps(prev => prev.map(s => s.id === stepId ? { ...s, progress: value } : s)); // optimistic update
     const { error } = await supabase.from("process_steps").update({ progress: value }).eq("id", stepId);
-    if (error) loadSteps();
+    if (error) { loadSteps(); return; }
+    if (current && oldValue !== value) {
+      // catat histori untuk laporan mingguan — kalau gagal, tidak mengganggu progress utama
+      await supabase.from("progress_history").insert({
+        step_id: stepId, project_id: current.project_id,
+        old_progress: oldValue, new_progress: value,
+        changed_by: session?.user?.email || "",
+      });
+    }
   }
 
   async function handleUpdateDetail(stepId, patch) {
